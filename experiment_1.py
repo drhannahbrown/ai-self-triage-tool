@@ -57,21 +57,21 @@ vignettes = [
 
 # dictionary of features to classify
 ae_features = {
-    "cardio_respiratory": {"chest pain" : 3, "pressure in chest" : 3, "tight chest" : 3, "difficulty breathing": 3, "can't breathe": 3, "shortness of breath" : 3, "tight chest" : 3},
-    "collapse": {"unresponsive" : 3 , "collapsed" :3, "fainted" : 2},
-    "bleeding": {"severe bleeding" : 3, "bleeding heavily" : 3},
-    "eye": {"sudden vision loss" : 3, "severe eye pain" : 3,"loss of vision" :3, "painful eye" : 2,
+    "cardio_respiratory": {"chest pain" : 1, "pressure in chest" : 1, "tight chest" : 1, "difficulty breathing": 1, "can't breathe": 1, "shortness of breath" : 1, "tight chest" : 1},
+    "collapse": {"unresponsive" : 1, "collapsed" :1, "fainted" : 1},
+    "bleeding": {"severe bleeding" : 1, "bleeding heavily" : 1},
+    "eye": {"sudden vision loss" : 1, "severe eye pain" : 1,"loss of vision" :1, "painful eye" : 1,
             #New lay language additions:
-        "blurred vision" : 3, "painful red eye" : 3, "vision suddenly blurred" : 3, "sudden vision loss" : 3},
-    "stroke": {"facial droop" : 3, "slurred speech" : 3, "one sided weakness" : 3, "sudden weakness" : 3, "face drooping" : 3, "unable to speak" : 2, "arm weakness" : 3, "leg weakness" : 3},
-    "sepsis": {"acute confusion" : 3, "drowsy" : 3, "unresponsive" : 3, "delirious" : 3, "not responding" : 3},
+        "blurred vision" : 1, "painful red eye" : 1, "vision suddenly blurred" : 1, "sudden vision loss" : 1},
+    "stroke": {"facial droop" : 1, "slurred speech" : 1, "one sided weakness" : 1, "sudden weakness" : 1, "face drooping" : 1, "unable to speak" : 1, "arm weakness" : 1, "leg weakness" : 1},
+    "sepsis": {"acute confusion" : 1, "drowsy" : 1, "unresponsive" : 1, "delirious" : 1, "not responding" : 1},
 
 }
 gp_features = {
-    "fatigue": {"chronic fatigue" : 2, "extreme tiredness" : 2},
-    "weight_loss": {"unexplained weight loss" : 2, "losing weight" : 2},
-    "breast_lump": {"breast lump" : 2, "lump in breast" : 2},
-    "period_pain": {"painful periods" : 2}
+    "fatigue": {"chronic fatigue" : 1, "extreme tiredness" : 1},
+    "weight_loss": {"unexplained weight loss" : 1, "losing weight" : 1},
+    "breast_lump": {"breast lump" : 1, "lump in breast" : 1},
+    "period_pain": {"painful periods" : 1}
 }
 self_care_features = {
     "headache": {"headache" : 1, "head hurts" : 1},
@@ -84,6 +84,17 @@ features = {
     "GP": gp_features,
     "Self Care": self_care_features
 }
+
+red_flags = [
+        "chest pain",
+        "shortness of breath",
+        "facial droop",
+        "unable to speak",
+        "loss of vision",
+        "severe eye pain",
+        "collapsed",
+        "confusion"
+    ]
 
 #matching
 def detect_features(text):
@@ -121,20 +132,6 @@ def normalise_text(text):
 
     return text
 
-def has_red_flag(text):
-    red_flags = [
-        "chest pain",
-        "shortness of breath",
-        "facial droop",
-        "unable to speak",
-        "loss of vision",
-        "severe eye pain",
-        "collapsed",
-        "unresponsive"
-    ]
-    return any(flag in text for flag in red_flags)
-
-
 #check if ANY of these words appear in the text
 def contains_any(text, keywords):
     return any(word in text for word in keywords)
@@ -143,19 +140,19 @@ def contains_any(text, keywords):
 def classify(text):
     text = normalise_text(text.lower().strip())
 
-    # STEP 1: emergency override (ONLY true red flags)
-    if has_red_flag(text):
-        return "A&E"
-
-    # STEP 2: scoring for everything else
     scores = detect_features(text)
-    return max(scores, key=scores.get)
 
+    for flag in red_flags:
+        if flag in text:
+            scores["A&E"] += 1
 
-# decision logic
-#ae_detected = detect_features(ae_features, text)
-#gp_detected = detect_features(gp_features, text)
-#self_detected = detect_features(self_care_features, text)
+    # 👇 NEW LOGIC
+    if scores["A&E"] >= 2:
+        return "A&E"
+    elif scores["GP"] >= 1:
+        return "GP"
+    else:
+        return "Self Care"
 
 def safety_screen():
     print("\n--- SAFETY CHECK ---")
@@ -189,34 +186,62 @@ def safety_screen():
 
     return True
 
+MODE = "test"   #CHANGE TO RUN IN TEST/USER MODE
 
-results = []
+if MODE == "test":
 
-for v in vignettes:
-    predicted = classify(v["text"])
+    results = []
 
-    results.append({
-        "id": v["id"],
-        "text": v["text"],
-        "expected": v["expected"],
-        "predicted": predicted,
-        "correct": predicted == v["expected"]
-    })
+    for v in vignettes:
+        predicted = classify(v["text"])
 
-print("\n--- RESULTS TABLE ---")
+        results.append({
+            "id": v["id"],
+            "text": v["text"],
+            "expected": v["expected"],
+            "predicted": predicted,
+            "correct": predicted == v["expected"]
+        })
 
-for r in results:
-    print(
-        r["id"],
-        "| Expected:", r["expected"],
-        "| Predicted:", r["predicted"],
-        "| Correct:", r["correct"]
-    )
-total = len(results)
-correct = sum(r["correct"] for r in results)
-accuracy = (correct / total) * 100
+    print("\n--- RESULTS TABLE ---")
 
-print("\n--- SUMMARY ---")
-print("Total vignettes:", total)
-print("Correct:", correct)
-print("Accuracy:", accuracy, "%")
+    for r in results:
+        print(
+            r["id"],
+            "| Expected:", r["expected"],
+            "| Predicted:", r["predicted"],
+            "| Correct:", r["correct"]
+        )
+
+
+    total = len(results)
+    correct = sum(r["correct"] for r in results)
+
+    accuracy = (correct / total) * 100
+
+    print("\n--- SUMMARY ---")
+    print("Total vignettes:", total)
+    print("Correct:", correct)
+    print("Accuracy:", accuracy, "%")
+
+elif MODE == "user":
+
+    if safety_screen():
+
+        text = input("\nPlease describe your symptoms: ")
+
+        predicted = classify(text)
+
+        print("\n--- TRIAGE RESULT ---")
+        print("Based on the symptoms provided:")
+
+        if predicted == "A&E":
+            print("➡️ Recommendation: Seek urgent care (A&E / 999 if severe)")
+        elif predicted == "GP":
+            print("➡️ Recommendation: Book a GP appointment")
+        else:
+            print("➡️ Recommendation: Self-care at home is appropriate")
+
+        print("\nTriage category:", predicted)
+
+
