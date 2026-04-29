@@ -157,6 +157,39 @@ def classify(text):
 #gp_detected = detect_features(gp_features, text)
 #self_detected = detect_features(self_care_features, text)
 
+def safety_screen():
+    print("\n--- SAFETY CHECK ---")
+    print("Please read the following carefully:\n")
+
+    warnings = [
+        "Signs of a heart attack: chest pain, pressure, heaviness, tightness or squeezing across the chest",
+        "Signs of a stroke: face dropping on one side, can’t hold both arms up, difficulty speaking",
+        "Sudden confusion (delirium): cannot state own name or age",
+        "Suicide attempt or self-harm",
+        "Severe difficulty breathing: struggling to speak, gasping or choking",
+        "Heavy bleeding: spraying, pouring, or pooling blood",
+        "Severe injury after a serious accident",
+        "Seizure (fit): shaking/jerking or unconscious and cannot be woken",
+        "Sudden swelling of lips, mouth, throat or tongue",
+        "Labour or childbirth: waters breaking, regular contractions, or baby arriving"
+    ]
+
+    for item in warnings:
+        print(f"- {item}")
+
+    print("\nIf ANY of these apply, you should seek emergency help immediately.")
+
+    response = input(
+        "\nTo continue, confirm you are safe to proceed and none of the listed emergency symptoms apply (yes/no): "
+    ).lower().strip()
+
+    if response == "no":
+        print("\n⚠️ Please seek urgent emergency care (999 / A&E).")
+        return False
+
+    return True
+
+
 results = []
 
 for v in vignettes:
