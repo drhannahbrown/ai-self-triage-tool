@@ -104,14 +104,18 @@ def detect_features(text):
         "Self Care": 0
     }
 
+    detected = []
+
     for category in features:
         for subcategory in features[category]:
             for keyword, weight in features[category][subcategory].items():
-                if keyword in text: #flexible word match
+                if keyword in text:
                     scores[category] += weight
+                    detected.append(keyword)
 
-    return scores
-#sematic normalisation layer
+    return scores, detected
+
+#rule-based normalisation layer
 def normalise_text(text):
     text = text.lower()
 
@@ -136,15 +140,24 @@ def normalise_text(text):
 def contains_any(text, keywords):
     return any(word in text for word in keywords)
 
+#AI Testing Layer
+def extract_features_ai(user_input):
+    return []
+def ai_normalise_text(text):
+    return text
+
+#marks the end of AI testing layer here
 
 def classify(text):
-    text = normalise_text(text.lower().strip())
+    USE_AI_NORMALISATION = False
+    text = text.lower().strip()
 
-    scores = detect_features(text)
+    if USE_AI_NORMALISATION:
+        text = ai_normalise_text(text)
+    else:
+        text = normalise_text(text)
 
-    for flag in red_flags:
-        if flag in text:
-            scores["A&E"] += 1
+    scores, detected = detect_features(text)
 
     # 👇 NEW LOGIC
     if scores["A&E"] >= 2:
@@ -193,6 +206,10 @@ if MODE == "test":
     results = []
 
     for v in vignettes:
+        #from here
+        ai_features = extract_features_ai(v["text"])
+        print("AI extracted:", ai_features)
+        #to here is the added testing AI code, could later be removed
         predicted = classify(v["text"])
 
         results.append({
