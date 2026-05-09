@@ -1,3 +1,4 @@
+from openai import OpenAI  #for AI model to work
 # Triage tool v1 - keyword based
 
 #Vignettes I am testing
@@ -53,6 +54,20 @@ vignettes = [
            "expected":"GP"
 },
 ]
+#These 3 lines are for the local AI to work
+client = OpenAI(
+    base_url="http://192.168.0.44:1234/v1",
+    api_key="lm-studio"
+)
+synonyms = {
+    "breathlessness": "shortness of breath",
+    "eye pain": "painful eye",
+    "facial drooping": "facial droop",
+    "confusion": "acute confusion",
+    "drowsiness": "drowsy",
+    "swelling": "leg swelling",
+    "calf pain": "leg pain"
+}
 #text = input("Please describe your symptoms: ").lower().strip() #converting all to lower case, removes paces from the start and end of the text
 
 # dictionary of features to classify
@@ -140,27 +155,59 @@ def normalise_text(text):
 def contains_any(text, keywords):
     return any(word in text for word in keywords)
 
-#AI Testing Layer
+#AI section due to Local AI model
 def extract_features_ai(user_input):
-    return []
-def ai_normalise_text(text):
-    return text
 
+    prompt = f"""
+Extract and normalise medical symptoms from this text.
+
+Return ONLY a comma separated list of symptoms.
+Do not explain anything.
+
+Text:
+{user_input}
+"""
+    print("\n===== PROMPT SENT TO MODEL =====\n")
+    print(prompt)
+    print("\n================================\n")
+
+    response = client.chat.completions.create(
+        model="local-model",
+        messages=[
+            {"role": "user", "content": prompt}
+        ],
+        temperature=0
+    )
+
+    content = response.choices[0].message.content.lower()
+
+    return [x.strip() for x in content.split(",")]
 #marks the end of AI testing layer here
 
-def classify(text):
-    USE_AI_NORMALISATION = False
+def classify(text, ai_features):
+
     text = text.lower().strip()
+    print("AI extracted:", ai_features)
 
-    if USE_AI_NORMALISATION:
-        text = ai_normalise_text(text)
-    else:
-        text = normalise_text(text)
+    scores = {
+        "A&E": 0,
+        "GP": 0,
+        "Self Care": 0
+        }
 
-    scores, detected = detect_features(text)
+    detected = []
 
-    # 👇 NEW LOGIC
-    if scores["A&E"] >= 2:
+    ai_text = " ".join(ai_features)
+
+    for category in features:
+        for subcategory in features[category].values():
+            for keyword, weight in subcategory.items():
+
+                if keyword in ai_text:
+                    scores[category] += weight
+                    detected.append(keyword)
+
+    if scores["A&E"] >= 1:
         return "A&E"
     elif scores["GP"] >= 1:
         return "GP"
@@ -205,12 +252,12 @@ if MODE == "test":
 
     results = []
 
+    results = []
+
     for v in vignettes:
-        #from here
-        ai_features = extract_features_ai(v["text"])
-        print("AI extracted:", ai_features)
-        #to here is the added testing AI code, could later be removed
-        predicted = classify(v["text"])
+        ai_features = extract_features_ai(v["text"])  # ONLY ONCE PER VIGNETTE
+
+        predicted = classify(v["text"], ai_features)
 
         results.append({
             "id": v["id"],
