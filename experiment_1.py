@@ -57,12 +57,12 @@ vignettes = [
 
 # dictionary of features to classify
 ae_features = {
-    "cardio_respiratory": {"chest pain" : 1, "pressure in chest" : 1, "tight chest" : 1, "difficulty breathing": 1, "can't breathe": 1, "shortness of breath" : 1, "tight chest" : 1},
+    "cardio_respiratory": {"chest pain" : 1, "pressure in chest" : 1, "difficulty breathing": 1, "can't breathe": 1, "shortness of breath" : 1, "tight chest" : 1},
     "collapse": {"unresponsive" : 1, "collapsed" :1, "fainted" : 1},
     "bleeding": {"severe bleeding" : 1, "bleeding heavily" : 1},
     "eye": {"sudden vision loss" : 1, "severe eye pain" : 1,"loss of vision" :1, "painful eye" : 1,
             #New lay language additions:
-        "blurred vision" : 1, "painful red eye" : 1, "vision suddenly blurred" : 1, "sudden vision loss" : 1},
+        "blurred vision" : 1, "painful red eye" : 1, "vision suddenly blurred" : 1},
     "stroke": {"facial droop" : 1, "slurred speech" : 1, "one sided weakness" : 1, "sudden weakness" : 1, "face drooping" : 1, "unable to speak" : 1, "arm weakness" : 1, "leg weakness" : 1},
     "sepsis": {"acute confusion" : 1, "drowsy" : 1, "unresponsive" : 1, "delirious" : 1, "not responding" : 1},
 
@@ -104,14 +104,18 @@ def detect_features(text):
         "Self Care": 0
     }
 
+    detected = []
+
     for category in features:
         for subcategory in features[category]:
             for keyword, weight in features[category][subcategory].items():
-                if keyword in text: #flexible word match
+                if keyword in text:
                     scores[category] += weight
+                    detected.append(keyword)
 
-    return scores
-#sematic normalisation layer
+    return scores, detected
+
+#rule-based normalisation layer
 def normalise_text(text):
     text = text.lower()
 
@@ -136,15 +140,24 @@ def normalise_text(text):
 def contains_any(text, keywords):
     return any(word in text for word in keywords)
 
+#AI Testing Layer
+def extract_features_ai(user_input):
+    return []
+def ai_normalise_text(text):
+    return text
+
+#marks the end of AI testing layer here
 
 def classify(text):
-    text = normalise_text(text.lower().strip())
+    USE_AI_NORMALISATION = False
+    text = text.lower().strip()
 
-    scores = detect_features(text)
+    if USE_AI_NORMALISATION:
+        text = ai_normalise_text(text)
+    else:
+        text = normalise_text(text)
 
-    for flag in red_flags:
-        if flag in text:
-            scores["A&E"] += 1
+    scores, detected = detect_features(text)
 
     # 👇 NEW LOGIC
     if scores["A&E"] >= 2:
@@ -193,6 +206,10 @@ if MODE == "test":
     results = []
 
     for v in vignettes:
+        #from here
+        ai_features = extract_features_ai(v["text"])
+        print("AI extracted:", ai_features)
+        #to here is the added testing AI code, could later be removed
         predicted = classify(v["text"])
 
         results.append({
