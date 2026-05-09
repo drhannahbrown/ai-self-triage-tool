@@ -57,12 +57,12 @@ vignettes = [
 
 # dictionary of features to classify
 ae_features = {
-    "cardio_respiratory": {"chest pain" : 1, "pressure in chest" : 1, "tight chest" : 1, "difficulty breathing": 1, "can't breathe": 1, "shortness of breath" : 1, "tight chest" : 1},
+    "cardio_respiratory": {"chest pain" : 1, "pressure in chest" : 1, "difficulty breathing": 1, "can't breathe": 1, "shortness of breath" : 1, "tight chest" : 1},
     "collapse": {"unresponsive" : 1, "collapsed" :1, "fainted" : 1},
     "bleeding": {"severe bleeding" : 1, "bleeding heavily" : 1},
     "eye": {"sudden vision loss" : 1, "severe eye pain" : 1,"loss of vision" :1, "painful eye" : 1,
             #New lay language additions:
-        "blurred vision" : 1, "painful red eye" : 1, "vision suddenly blurred" : 1, "sudden vision loss" : 1},
+        "blurred vision" : 1, "painful red eye" : 1, "vision suddenly blurred" : 1},
     "stroke": {"facial droop" : 1, "slurred speech" : 1, "one sided weakness" : 1, "sudden weakness" : 1, "face drooping" : 1, "unable to speak" : 1, "arm weakness" : 1, "leg weakness" : 1},
     "sepsis": {"acute confusion" : 1, "drowsy" : 1, "unresponsive" : 1, "delirious" : 1, "not responding" : 1},
 
